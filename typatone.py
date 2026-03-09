@@ -110,3 +110,50 @@ class SoundEngine:
 
     def cleanup(self):
         pygame.mixer.quit()
+
+
+def main():
+    from pynput import keyboard
+
+    def _key_to_name(key) -> str:
+        """Convert pynput key object to our key name string."""
+        if hasattr(key, "char") and key.char is not None:
+            return key.char.lower()
+        key_map = {
+            keyboard.Key.space: "space",
+            keyboard.Key.enter: "enter",
+            keyboard.Key.backspace: "backspace",
+            keyboard.Key.shift: "shift",
+            keyboard.Key.shift_r: "shift_r",
+            keyboard.Key.cmd: "cmd",
+            keyboard.Key.cmd_r: "cmd_r",
+            keyboard.Key.ctrl: "ctrl",
+            keyboard.Key.ctrl_r: "ctrl_r",
+            keyboard.Key.alt: "alt",
+            keyboard.Key.alt_r: "alt_r",
+            keyboard.Key.caps_lock: "caps_lock",
+            keyboard.Key.tab: "tab",
+        }
+        return key_map.get(key, "unknown")
+
+    print("Typatone-Mac is running! Press Ctrl+C to stop.")
+    engine = SoundEngine()
+
+    def on_press(key):
+        name = _key_to_name(key)
+        engine.play(name)
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
+    try:
+        listener.join()
+    except KeyboardInterrupt:
+        print("\nStopping Typatone-Mac...")
+    finally:
+        listener.stop()
+        engine.cleanup()
+
+
+if __name__ == "__main__":
+    main()
