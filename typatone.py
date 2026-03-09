@@ -26,3 +26,51 @@ def generate_tone(frequency: float, duration: float, volume: float = 0.3) -> np.
 
     wave = wave * envelope * volume
     return (wave * 32767).astype(np.int16)
+
+
+def _build_pentatonic_scale() -> list[float]:
+    """Build pentatonic notes from C3 to ~E5."""
+    base_notes = [261.63, 293.66, 329.63, 392.00, 440.00]  # C4, D4, E4, G4, A4
+    scale = []
+    for octave_offset in [-1, 0, 1]:
+        for note in base_notes:
+            freq = note * (2 ** octave_offset)
+            scale.append(round(freq, 2))
+    return sorted(scale)
+
+
+PENTATONIC_SCALE = _build_pentatonic_scale()
+
+_BOTTOM_ROW = list("zxcvbnm,./")
+_HOME_ROW = list("asdfghjkl;'")
+_TOP_ROW = list("qwertyuiop[]")
+_NUMBER_ROW = list("1234567890-=")
+_ALL_KEYS = _BOTTOM_ROW + _HOME_ROW + _TOP_ROW + _NUMBER_ROW
+
+KEY_TO_FREQ: dict[str, float] = {}
+for i, key in enumerate(_ALL_KEYS):
+    KEY_TO_FREQ[key] = PENTATONIC_SCALE[i % len(PENTATONIC_SCALE)]
+
+SPECIAL_KEYS: dict[str, str] = {
+    "space": "click",
+    "enter": "thud",
+    "backspace": "descend",
+}
+
+_SPECIAL_FREQS = {
+    "space": 800.0,
+    "enter": 150.0,
+    "backspace": 500.0,
+}
+
+SILENT_KEYS = {"shift", "cmd", "ctrl", "alt", "shift_r", "cmd_r", "ctrl_r", "alt_r", "caps_lock", "tab"}
+
+
+def get_note_frequency(key_name: str) -> float | None:
+    """Return frequency for a key, or None if silent."""
+    key_name = key_name.lower()
+    if key_name in SILENT_KEYS:
+        return None
+    if key_name in _SPECIAL_FREQS:
+        return _SPECIAL_FREQS[key_name]
+    return KEY_TO_FREQ.get(key_name)
