@@ -1,4 +1,6 @@
 import numpy as np
+import pygame
+import pygame.sndarray
 
 SAMPLE_RATE = 44100
 
@@ -74,3 +76,37 @@ def get_note_frequency(key_name: str) -> float | None:
     if key_name in _SPECIAL_FREQS:
         return _SPECIAL_FREQS[key_name]
     return KEY_TO_FREQ.get(key_name)
+
+
+class SoundEngine:
+    def __init__(self):
+        pygame.mixer.pre_init(SAMPLE_RATE, -16, 1, 512)
+        pygame.mixer.init()
+        pygame.mixer.set_num_channels(16)
+        self.sounds: dict[str, pygame.mixer.Sound] = {}
+        self._build_sounds()
+
+    def _build_sounds(self):
+        for key, freq in KEY_TO_FREQ.items():
+            tone = generate_tone(freq, 0.18)
+            self.sounds[key] = pygame.sndarray.make_sound(tone)
+
+        click = generate_tone(800.0, 0.05, volume=0.15)
+        self.sounds["space"] = pygame.sndarray.make_sound(click)
+
+        thud = generate_tone(150.0, 0.12, volume=0.25)
+        self.sounds["enter"] = pygame.sndarray.make_sound(thud)
+
+        desc = generate_tone(500.0, 0.1, volume=0.2)
+        self.sounds["backspace"] = pygame.sndarray.make_sound(desc)
+
+    def play(self, key_name: str):
+        key_name = key_name.lower()
+        if key_name in SILENT_KEYS:
+            return
+        sound = self.sounds.get(key_name)
+        if sound:
+            sound.play()
+
+    def cleanup(self):
+        pygame.mixer.quit()
